@@ -1,0 +1,29 @@
+# Django Model for Blog Reader Users:
+# 4. My recent 5 liked blogs
+
+from django.db import models
+from django.contrib.auth.models import User
+
+class Blog(models.Model):
+    name = models.CharField(max_length=100)
+
+class Response(models.Model):
+    blog = models.ForeignKey(Blog, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    response_date = models.DateTimeField()
+    like_or_not = models.BooleanField()
+
+def get_recent_liked_blogs(reader_username):
+    # Retrieve the recent 5 liked blogs for a specific blog reader user
+    recent_liked_blogs = Response.objects.filter(user__username=reader_username, like_or_not=True).order_by('-response_date')[:5]
+    
+    return recent_liked_blogs
+
+# Example usage:
+reader_username = 'blog_reader_user'
+recent_liked_blogs = get_recent_liked_blogs(reader_username)
+
+# Print the results
+for blog in recent_liked_blogs:
+    print(f"Blog ID: {blog.blog.id}, Blog Name: {blog.blog.name}, Liked Date: {blog.response_date}")
+    print("---")
