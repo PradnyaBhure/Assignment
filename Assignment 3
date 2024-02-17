@@ -1,0 +1,43 @@
+# For Blog author Users:
+# 3. Top 5 Liked and Top 5 disliked Blogs in the last 3 days
+from django.utils import timezone
+from django.db.models import Count, Q
+from django.http import JsonResponse
+from .models import Blog, Response
+
+def get_top_liked_and_disliked_blogs(request, author_username):
+    three_days_ago = timezone.now() - timezone.timedelta(days=3)
+    
+    # Top 5 liked blogs
+    top_liked_blogs = Blog.objects.filter(
+        author__username=author_username,
+        response__like_or_not=True,
+        response__response_date__gte=three_days_ago
+    ).annotate(
+        likes_count=Count('response', distinct=True)
+    ).order_by('-likes_count')[:5]
+    
+    # Top 5 disliked blogs
+    top_disliked_blogs = Blog.objects.filter(
+        author__username=author_username,
+        response__like_or_not=False,
+        response__response_date__gte=three_days_ago
+    ).annotate(
+        dislikes_count=Count('response', distinct=True)
+    ).order_by('-dislikes_count')[:5]
+    
+    # Preparing the response data
+    liked_blogs_data = [
+        {"Blog ID": blog.id, "Blog Name": blog.name, "Likes Count": blog.likes_count}
+        for blog in top_liked_blogs
+    ]
+    
+    disliked_blogs_data = [
+        {"Blog ID": blog.id, "Blog Name": blog.name, "Dislikes Count": blog.dislikes_count}
+        for blog in top_disliked_blogs
+    ]
+    
+    return JsonResponse({
+        "Top 5 Liked Blogs": liked_blogs_data,
+        "Top 5 Disliked Blogs": disliked_blogs_data
+    })
