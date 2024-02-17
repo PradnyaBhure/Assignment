@@ -1,0 +1,42 @@
+from django.db import connection
+from django.db import models
+
+class Blog(models.Model):
+    name = models.CharField(max_length=100)
+    author = models.ForeignKey('User', on_delete=models.CASCADE)
+
+class Comment(models.Model):
+    blog = models.ForeignKey(Blog, on_delete=models.CASCADE)
+
+class User(models.Model):
+    name = models.CharField(max_length=50)
+
+def get_top_commented_blogs(author_username):
+    # Retrieve the top 5 commented blogs for a specific author
+    query = """
+        SELECT
+            b.id AS blog_id,
+            b.name AS blog_name,
+            COUNT(DISTINCT c.id) AS comments_count
+        FROM myapp_blog b
+        INNER JOIN myapp_comment c ON b.id = c.blog_id
+        INNER JOIN myapp_user u ON b.author_id = u.id
+        WHERE u.name = %s
+        GROUP BY b.id, b.name
+        ORDER BY comments_count DESC
+        LIMIT 5;
+    """
+
+    with connection.cursor() as cursor:
+        cursor.execute(query, [author_username])
+        top_commented_blogs = cursor.fetchall()
+
+    return top_commented_blogs
+
+# Example usage:
+author_username = 'user1'
+top_commented_blogs = get_top_commented_blogs(author_username)
+
+# Print the results
+for blog in top_commented_blogs:
+    print(f"Blog ID: {blog[0]}, Blog Name: {blog[1]}, Comments Count: {blog[2]}")
