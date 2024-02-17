@@ -1,0 +1,31 @@
+# For Blog author Users:
+# 1. Blogs of a Specific author/User with likes, dislikes, comments count
+
+from django.db import connection
+from django.db.models import Count
+from myapp.models import Blog, Response, Comment, User
+
+def get_blog_details_for_author(author_username):
+    """
+    Retrieve blogs with likes, dislikes, and comments count for a specific user
+    :param author_username: The username of the author
+    :return: List of blogs with their details
+    """
+    # Retrieve blogs with likes, dislikes, and comments count for a specific user
+    blogs_with_details = Blog.objects.filter(author__username=author_username).annotate(
+        likes_count=Count('response', filter=Response.objects.filter(like_or_not=True)),
+        dislikes_count=Count('response', filter=Response.objects.filter(like_or_not=False)),
+        comments_count=Count('comment')
+    ).values('id', 'name', 'likes_count', 'dislikes_count', 'comments_count')
+
+    return blogs_with_details
+
+# Example usage:
+author_username = 'user1'
+blogs_with_details = get_blog_details_for_author(author_username)
+
+# Print the results
+for blog in blogs_with_details:
+    print(f"Blog ID: {blog['id']}, Blog Name: {blog['name']}")
+    print(f"Likes: {blog['likes_count']}, Dislikes: {blog['dislikes_count']}, Comments: {blog['comments_count']}")
+
