@@ -1,0 +1,31 @@
+# Django Model for Blog Reader Users:
+# My comment history for a particular author
+
+from django.db import models
+from django.contrib.auth.models import User
+
+class Blog(models.Model):
+    name = models.CharField(max_length=100)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+
+class Comment(models.Model):
+    blog = models.ForeignKey(Blog, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    comment_text = models.TextField()
+    created_date = models.DateTimeField(auto_now_add=True)
+
+def get_comment_history_for_author(reader_username, author_username):
+    # Retrieve the comment history for a particular author for a blog reader user
+    comment_history = Comment.objects.filter(user__username=reader_username, blog__author__username=author_username).order_by('-created_date')
+    
+    return comment_history
+
+# Example usage:
+reader_username = 'blog_reader_user'
+author_username_to_fetch = 'specific_author'
+comment_history = get_comment_history_for_author(reader_username, author_username_to_fetch)
+
+# Print the results
+for comment in comment_history:
+    print(f"Blog ID: {comment.blog.id}, Blog Name: {comment.blog.name}")
+    print(f"Comment: {comment.comment_text}, Comment Date: {comment.created_date}")
